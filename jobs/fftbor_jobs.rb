@@ -4,11 +4,17 @@ require "active_record"
 require "awesome_print"
 require "vienna_rna"
 require "rbfam"
+require "diverge"
+
+def helper(filename)
+  require "./helpers/%s.rb" % filename
+end
 
 module BenchmarkJob
   @queue = :benchmarking
 
   def self.perform(params)
+    helper("benchmark_mysql_config")
     Run.connect
     
     size = params["sequence"].length
@@ -34,6 +40,7 @@ module DuplicateJob
   @queue = :benchmarking
 
   def self.perform(params)
+    helper("benchmark_mysql_config")
     Run.connect
     
     run = Run.find(params["id"])
@@ -55,13 +62,9 @@ end
 
 module FftborToFileJob
   @queue = :fftbor
-  
-  def self.connect
-    Rbfam.script("sequences_in_mysql")
-  end
 
   def self.perform(params)
-    connect
+    Rbfam.script("sequences_in_mysql")
     
     rbfam   = SequenceTable.find(params["id"]).to_rbfam_sequence
     results = ViennaRna::Fftbor.run(seq: rbfam.seq, str: :mfe).response
@@ -69,5 +72,31 @@ module FftborToFileJob
     File.open(File.join(params["path"], "#{params['id']}.out"), "w") do |file|
       file.write(results)
     end
+  end
+end
+
+module DivergenceJob
+  @queue = :divergence
+  
+  def self.perform(params)
+    helper("divergence_mysql_config")
+    Run.connect
+    
+    rnabor = ViennaRna::Rnabor.run(sequence: params["sequence"], structure: params["structure"])
+    fftbor = ViennaRna::Fftbor.run(sequence: params["sequence"], structure: params["structure"])
+    
+    rnabor_distribution = rnabor.distribution
+    fftbor_distribution = fftbor.distribution
+    
+    Run.create({
+      sequence:        params["sequence"], 
+      sequence_length: params["sequence"].length, 
+      structure:       params["structure"], 
+      algorithm:       "RNAbor vs. FFTbor (Z_k/Z)", 
+      tvd:             Diverge.new(rnabor_distribution, fftbor_distribution).tvd,
+      count:           -1,
+      fftbor_time:     fftbor.runtime.real,
+      rnabor_time:     rnabor.runtime.real
+    })
   end
 end

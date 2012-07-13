@@ -1,4 +1,7 @@
 #!/usr/bin/env ruby
+# rackup config.ru
+# localhost:9292
+
 require "resque/server"
 
 use Rack::ShowExceptions
