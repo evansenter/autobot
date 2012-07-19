@@ -86,17 +86,57 @@ module DivergenceJob
     fftbor = ViennaRna::Fftbor.run(sequence: params["sequence"], structure: params["structure"])
     
     rnabor_distribution = rnabor.distribution
-    fftbor_distribution = fftbor.distribution
+    fftbor_distribution = fftbor.distribution + ([0] * (rnabor_distribution.length - fftbor.distribution.length))
     
     Run.create({
       sequence:        params["sequence"], 
       sequence_length: params["sequence"].length, 
       structure:       params["structure"], 
-      algorithm:       "RNAbor vs. FFTbor (Z_k/Z)", 
+      algorithm:       "RNAbor vs. FFTbor with max base pair distance (Z_k/Z)", 
       tvd:             Diverge.new(rnabor_distribution, fftbor_distribution).tvd,
       count:           -1,
       fftbor_time:     fftbor.runtime.real,
       rnabor_time:     rnabor.runtime.real
     })
+  end
+end
+
+module DataLoaderJob
+  @queue = :fftbor
+  
+  def self.perform(params)
+    helper("data_loader_mysql_config")
+    Distribution.connect
+    
+    log        = File.read(params["log_path"])
+    parsed_log = log.split(/\n/).select { |line| line =~ /^\d+\t\d(\.\d+)?$/ }.map { |line| ->(k, p) { { k: k, p: p } }[*line.split(/\t/)] }
+
+    Distribution.create({
+      description: File.basename(params["log_path"], ".log"), 
+      data_from:   params["data_from"],
+      points:      parsed_log.map(&Point.method(:new))
+    })
+  end
+end
+
+module DipTestJob
+  @queue = :fftbor
+  
+  def self.perform(params)
+    helper("data_loader_mysql_config")
+    Distribution.connect
+    
+    data         = Distribution.find(params["id"])
+    distribution = data.distribution.join(", ")
+    command      = %q|Rscript -e "library('diptest'); dip_results <- dip.test(c(%s)); print(dip_results[1]); print(dip_results[2])"| % distribution
+    
+    puts command
+    
+    dip_results    = %x|#{command}|    
+    parsed_results = ->(d, p) { { d: d, p_value: p } }[*dip_results.chomp.split(/\n\n/).map { |line| line.split(/\n/).last.match(/\d(\.\d+)?/)[0] }]
+    
+    ap parsed_results
+    
+    data.update_attributes(parsed_results)
   end
 end
