@@ -70,6 +70,14 @@ class Distribution < ActiveRecord::Base
     
     ->(d, p) { { d: d, p_value: p } }[*dip_results.chomp.split(/\n\n/).map { |line| line.split(/\n/).last.strip.gsub(/(\[1\])\s+/, "").to_f }]
   end
+  
+  def quick_plot(directory = false)
+    tap do
+      directory = File.join(directory, description.gsub(/[^A-Za-z0-9]/, "_") + ".png") if directory
+    
+      ViennaRna::Utils.quick_plot(description, distribution.each_with_index.to_a.map(&:reverse), directory)
+    end
+  end
 end
 
 class Point < ActiveRecord::Base
