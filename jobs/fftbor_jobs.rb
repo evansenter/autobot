@@ -6,7 +6,7 @@ require "vienna_rna"
 require "rbfam"
 require "diverge"
 
-def helper(filename)
+def autobot_helper(filename)
   require "./helpers/%s.rb" % filename
 end
 
@@ -14,7 +14,7 @@ module BenchmarkJob
   @queue = :benchmarking
 
   def self.perform(params)
-    helper("benchmark_mysql_config")
+    autobot_helper("benchmark_mysql_config")
     Run.connect
     
     size = params["sequence"].length
@@ -40,7 +40,7 @@ module DuplicateJob
   @queue = :benchmarking
 
   def self.perform(params)
-    helper("benchmark_mysql_config")
+    autobot_helper("benchmark_mysql_config")
     Run.connect
     
     run = Run.find(params["id"])
@@ -79,7 +79,7 @@ module DivergenceJob
   @queue = :divergence
   
   def self.perform(params)
-    helper("divergence_mysql_config")
+    autobot_helper("divergence_mysql_config")
     Run.connect
     
     rnabor = ViennaRna::Rnabor.run(sequence: params["sequence"], structure: params["structure"])
@@ -105,7 +105,7 @@ module DataLoaderJob
   @queue = :fftbor
   
   def self.perform(params)
-    helper("data_loader_mysql_config")
+    autobot_helper("data_loader_mysql_config")
     Distribution.connect
     
     log        = File.read(params["log_path"])
@@ -123,20 +123,23 @@ module DipTestJob
   @queue = :fftbor
   
   def self.perform(params)
-    helper("data_loader_mysql_config")
+    autobot_helper("data_loader_mysql_config")
     Distribution.connect
     
-    data         = Distribution.find(params["id"])
-    distribution = data.distribution.join(", ")
-    command      = %q|Rscript -e "library('diptest'); dip_results <- dip.test(c(%s)); print(dip_results[1]); print(dip_results[2])"| % distribution
+    data = Distribution.find(params["id"])
+    data.update_attributes(data.dip_test)
+  end
+end
+
+module FftborDistributionJob
+  @queue = :fftbor
+  
+  def self.perform(params)
+    autobot_helper("data_loader_mysql_config")
+    Distribution.connect
     
-    puts command
+    run = ViennaRna::Fftbor.run(seq: params["sequence"], str: params["structure"])
     
-    dip_results    = %x|#{command}|    
-    parsed_results = ->(d, p) { { d: d, p_value: p } }[*dip_results.chomp.split(/\n\n/).map { |line| line.split(/\n/).last.match(/\d(\.\d+)?/)[0] }]
-    
-    ap parsed_results
-    
-    data.update_attributes(parsed_results)
+    Distribution.from_run!(run, params["description"], params["data_from"], params["options"] || {})
   end
 end
