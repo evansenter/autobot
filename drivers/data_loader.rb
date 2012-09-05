@@ -1,7 +1,6 @@
 require "vienna_rna"
 require "awesome_print"
 require "resque"
-require "./../helpers/data_loader_mysql_config.rb"
 require "./../jobs/fftbor_jobs.rb"
 
 ViennaRna.debug = false

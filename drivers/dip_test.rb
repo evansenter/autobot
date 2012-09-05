@@ -10,8 +10,6 @@ where_clause    = ARGV[0]
 if where_clause
   inline_rails if defined?(inline_rails)
   
-  Distribution.connect
-  
   Distribution.where(where_clause).each do |distribution|
     Resque.enqueue(DipTestJob, id: distribution.id)
   end

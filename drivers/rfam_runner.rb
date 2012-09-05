@@ -5,7 +5,6 @@ require "./../helpers/data_loader_mysql_config.rb"
 require "./../jobs/fftbor_jobs.rb"
 
 ViennaRna.debug = false
-Distribution.connect
 
 Distribution.where("data_from = 'rfam' AND sequence_length = 300").select { |distribution| distribution.structure =~ /^\.+$/ }.each do |rfam|
   Resque.enqueue(FftborDistributionJob, {

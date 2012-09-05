@@ -106,15 +106,20 @@ module DataLoaderJob
   
   def self.perform(params)
     autobot_helper("data_loader_mysql_config")
-    Distribution.connect
     
     log        = File.read(params["log_path"])
+    sequence   = log.split(/\n/).first.split(/\s+/)[1]
+    structure  = log.split(/\n/).first.split(/\s+/)[2]
     parsed_log = log.split(/\n/).select { |line| line =~ /^\d+\t\d(\.\d+)?$/ }.map { |line| ->(k, p) { { k: k, p: p } }[*line.split(/\t/)] }
 
     Distribution.create({
-      description: File.basename(params["log_path"], ".log"), 
-      data_from:   params["data_from"],
-      points:      parsed_log.map(&Point.method(:new))
+      sequence:        sequence,
+      structure:       structure,
+      sequence_length: sequence.length,
+      output:          log,
+      description:     File.basename(params["log_path"], ".log"), 
+      data_from:       params["data_from"],
+      points:          parsed_log.map(&Point.method(:new))
     })
   end
 end
@@ -124,7 +129,6 @@ module DipTestJob
   
   def self.perform(params)
     autobot_helper("data_loader_mysql_config")
-    Distribution.connect
     
     data = Distribution.find(params["id"])
     data.update_attributes(data.dip_test)
@@ -136,10 +140,49 @@ module FftborDistributionJob
   
   def self.perform(params)
     autobot_helper("data_loader_mysql_config")
-    Distribution.connect
     
-    run = ViennaRna::Fftbor.run(seq: params["sequence"], str: params["structure"])
+    fold = ViennaRna::Fold.run(seq: params["sequence"])
+    run  = ViennaRna::Fftbor.run(seq: params["sequence"], str: fold.structure)
     
-    Distribution.from_run!(run, params["description"], params["data_from"], params["options"] || {})
+    Distribution.from_run!(run, params["description"], params["data_from"], (params["options"] || {}).merge(mfe: fold.mfe))
+  end
+end
+
+module FftborDistributionFromEmptyJob
+  @queue = :fftbor
+  
+  def self.perform(params)
+    autobot_helper("data_loader_mysql_config")
+        
+    Distribution.from_run!(ViennaRna::Fftbor.run(params["sequence"]), params["description"], params["data_from"], (params["options"] || {}).merge(mfe: 0))
+  end
+end
+
+module FftborDistributionFromSequenceAndStructureJob
+  @queue = :fftbor
+  
+  def self.perform(params)
+    autobot_helper("data_loader_mysql_config")
+        
+    Distribution.from_run!(
+      ViennaRna::Fftbor.run(seq: params["sequence"], str: params["structure"]), 
+      params["description"], 
+      params["data_from"],
+      { 
+        window:  params["window"],
+        details: params["details"] 
+      }
+    )
+  end
+end
+
+module AddMfeToDistributionJob
+  @queue = :fftbor
+  
+  def self.perform(params)
+    autobot_helper("data_loader_mysql_config")
+    
+    distribution = Distribution.find(params["id"])
+    distribution.update_attribute(:mfe, ViennaRna::Eval.run(seq: distribution.sequence, str: distribution.structure).mfe)
   end
 end

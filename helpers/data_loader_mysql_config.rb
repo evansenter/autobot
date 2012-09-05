@@ -3,7 +3,7 @@ require "active_record"
 require "rbfam"
 
 class Distribution < ActiveRecord::Base
-  validates_presence_of :description, :data_from
+  validates_presence_of :description, :data_from, :output
   
   has_many :points, dependent: :destroy
   
@@ -46,10 +46,16 @@ class Distribution < ActiveRecord::Base
       sequence:        run.data.seq,
       structure:       run.data.safe_structure,
       sequence_length: run.data.seq.length,
+      output:          run.response,
       description:     description, 
       data_from:       data_from,
-      points:          run.k_p_points.map { |k, p| Point.new(k: k, p: p) }
+      points:          run.k_p_points.map { |k, p| Point.new(k: k, p: p) },
+      expected_k:      run.expected_k
     }.merge(options))
+  end
+  
+  def to_vienna_rna
+    ViennaRna::Fftbor.bootstrap({ seq: sequence, str: structure }, output)
   end
   
   def distribution
@@ -87,3 +93,8 @@ class Point < ActiveRecord::Base
   
   default_scope order: "k ASC"
 end
+
+Distribution.connect
+
+# puts "Note: might be a good idea to have (optional) outgoing references in the Distributions table to the database / table / id " +
+#      "of the object which the distribution corresponds to. This can (but not necessarily should) be a two-way relation."
