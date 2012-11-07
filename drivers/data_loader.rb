@@ -1,7 +1,7 @@
 require "vienna_rna"
 require "awesome_print"
 require "resque"
-require "./../jobs/fftbor_jobs.rb"
+require "./../jobs/fftx_jobs.rb"
 
 ViennaRna.debug = false
 

@@ -7,12 +7,6 @@ class Distribution < ActiveRecord::Base
   
   has_many :points, dependent: :destroy
   
-  before_create do
-    dip_test_hash = dip_test
-    self.d        = dip_test_hash[:d]
-    self.p_value  = dip_test_hash[:p_value]
-  end
-  
   class DataMigration < ActiveRecord::Migration
     def self.up
       unless ActiveRecord::Base.connection.execute("show tables").find { |i| i == ["distributions"] }
@@ -34,11 +28,11 @@ class Distribution < ActiveRecord::Base
   def self.connect
     ActiveRecord::Base.establish_connection(config = { adapter: "mysql2", username: "root", reconnect: true })
 
-    unless ActiveRecord::Base.connection.execute("show databases").map { |i| i }.flatten.include?("fftbor_data")
-      ActiveRecord::Base.connection.create_database("fftbor_data")
+    unless ActiveRecord::Base.connection.execute("show databases").map { |i| i }.flatten.include?("fftx_data")
+      ActiveRecord::Base.connection.create_database("fftx_data")
     end
 
-    ActiveRecord::Base.establish_connection(config.merge(database: "fftbor_data"))
+    ActiveRecord::Base.establish_connection(config.merge(database: "fftx_data"))
   end
   
   def self.from_run!(run, description, data_from, options = {})
@@ -47,6 +41,7 @@ class Distribution < ActiveRecord::Base
       structure:       run.data.safe_structure,
       sequence_length: run.data.seq.length,
       output:          run.response,
+      algorithm:       run.class.name
       description:     description, 
       data_from:       data_from,
       points:          run.k_p_points.map { |k, p| Point.new(k: k, p: p) },
@@ -54,8 +49,12 @@ class Distribution < ActiveRecord::Base
     }.merge(options))
   end
   
-  def to_vienna_rna
-    ViennaRna::Fftbor.bootstrap({ seq: sequence, str: structure }, output)
+  def rna
+    ViennaRna::Rna.new(sequence, structure)
+  end
+  
+  def vienna
+    Kernel.const_get(algorithm).bootstrap(rna, output)
   end
   
   def distribution

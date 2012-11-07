@@ -2,7 +2,7 @@ require "vienna_rna"
 require "shuffle"
 require "awesome_print"
 require "resque"
-require "./../jobs/fftbor_jobs.rb"
+require "./../jobs/fftx_jobs.rb"
 
 Rbfam.script("sequences_in_mysql")
 

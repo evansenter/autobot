@@ -2,7 +2,7 @@ require "vienna_rna"
 require "awesome_print"
 require "resque"
 require "./../helpers/benchmark_mysql_config.rb"
-require "./../jobs/fftbor_jobs.rb"
+require "./../jobs/fftx_jobs.rb"
 
 ViennaRna.debug = false
 

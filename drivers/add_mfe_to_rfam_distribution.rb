@@ -2,7 +2,7 @@ require "vienna_rna"
 require "awesome_print"
 require "resque"
 require "./../helpers/data_loader_mysql_config.rb"
-require "./../jobs/fftbor_jobs.rb"
+require "./../jobs/fftx_jobs.rb"
 
 family = Rbfam::Family.new(ARGV[0])
 

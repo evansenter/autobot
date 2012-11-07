@@ -1,7 +1,7 @@
 require "rbfam"
 require "awesome_print"
 require "resque"
-require "./../jobs/fftbor_jobs.rb"
+require "./../jobs/fftx_jobs.rb"
 
 get_seq   = ->(start, stop) { Rbfam::Utils.simple_rna_sequence("NC_000964", start, stop) }
 sequences = [
@@ -19,7 +19,8 @@ sequences.each_with_index do |sequence, i|
     off: ".............((((((((...(((((((.......)))))))........((((((.......))))))..))))))))........(((((........)))))............((((((((((((((.......))))))))))))))......"
   }.each do |state, structure|
     (0..(sequence.length - structure.length)).each do |window_start|
-      Resque.enqueue(FftborDistributionFromSequenceAndStructureJob, {
+      Resque.enqueue(FftxDistributionFromSequenceAndStructureJob, {
+        algorithm:   "Fftbor",
         sequence:    sequence[window_start, structure.length], 
         structure:   structure, 
         description: "Candidate From Template (candidate #{i} window #{window_start} gene #{state})", 

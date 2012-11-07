@@ -2,7 +2,7 @@ require "vienna_rna"
 require "awesome_print"
 require "resque"
 require "./../helpers/divergence_mysql_config.rb"
-require "./../jobs/fftbor_jobs.rb"
+require "./../jobs/fftx_jobs.rb"
 
 # 20.step(300, 20).each do |size|
 #   3.times do
