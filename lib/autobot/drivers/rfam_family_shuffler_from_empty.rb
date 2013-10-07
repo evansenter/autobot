@@ -1,8 +1,9 @@
+$: << "/Users/evansenter/Source/autobot/lib" unless $:.include?("/Users/evansenter/Source/autobot/lib")
 require "vienna_rna"
 require "shuffle"
 require "awesome_print"
 require "resque"
-require "./../jobs/fftx_jobs.rb"
+require "autobot/jobs/fftx_jobs"
 
 Rbfam.script("sequences_in_mysql")
 

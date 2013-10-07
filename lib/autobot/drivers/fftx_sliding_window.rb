@@ -1,7 +1,8 @@
+$: << "/Users/evansenter/Source/autobot/lib" unless $:.include?("/Users/evansenter/Source/autobot/lib")
 require "vienna_rna"
 require "awesome_print"
 require "resque"
-require "./../jobs/fftx_jobs.rb"
+require "autobot/jobs/fftx_jobs"
 
 if (4..5) === ARGV.length
   sequence_dir, algorithm, structure, data_from, details = ARGV[0, 5]

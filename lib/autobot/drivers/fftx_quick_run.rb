@@ -1,8 +1,9 @@
+$: << "/Users/evansenter/Source/autobot/lib" unless $:.include?("/Users/evansenter/Source/autobot/lib")
 require "vienna_rna"
 require "awesome_print"
 require "resque"
-require "./../helpers/data_loader_mysql_config.rb"
-require "./../jobs/fftx_jobs.rb"
+require "autobot/helpers/data_loader_mysql_config"
+require "autobot/jobs/fftx_jobs"
 
 ViennaRna.debug = true
 

@@ -41,7 +41,7 @@ class Distribution < ActiveRecord::Base
       structure:       run.data.safe_structure,
       sequence_length: run.data.seq.length,
       output:          run.response,
-      algorithm:       run.class.name
+      algorithm:       run.class.name.demodulize,
       description:     description, 
       data_from:       data_from,
       points:          run.k_p_points.map { |k, p| Point.new(k: k, p: p) },
@@ -54,7 +54,7 @@ class Distribution < ActiveRecord::Base
   end
   
   def vienna
-    Kernel.const_get(algorithm).bootstrap(rna, output)
+    ViennaRna.const_get(algorithm).bootstrap(rna, output)
   end
   
   def distribution

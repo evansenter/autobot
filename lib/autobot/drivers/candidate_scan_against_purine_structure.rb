@@ -1,7 +1,8 @@
+$: << "/Users/evansenter/Source/autobot/lib" unless $:.include?("/Users/evansenter/Source/autobot/lib")
 require "rbfam"
 require "awesome_print"
 require "resque"
-require "./../jobs/fftx_jobs.rb"
+require "autobot/jobs/fftx_jobs"
 
 get_seq   = ->(start, stop) { Rbfam::Utils.simple_rna_sequence("NC_000964", start, stop) }
 sequences = [

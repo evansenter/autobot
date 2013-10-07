@@ -1,3 +1,4 @@
+$: << "/Users/evansenter/Source/autobot/lib" unless $:.include?("/Users/evansenter/Source/autobot/lib")
 require "resque"
 require "mysql2"
 require "active_record"
@@ -7,7 +8,7 @@ require "rbfam"
 require "diverge"
 
 def autobot_helper(filename)
-  require "./helpers/%s.rb" % filename
+  require "autobot/helpers/%s" % filename
 end
 
 module BenchmarkJob
@@ -148,13 +149,20 @@ module FftborDistributionFromMfeJob
   end
 end
 
-module FftborDistributionFromEmptyJob
-  @queue = :fftbor
+module FftxDistributionFromEmptyJob
+  @queue = :fftx
   
   def self.perform(params)
     autobot_helper("data_loader_mysql_config")
+    
+    fftx = ViennaRna.const_get(params["algorithm"].demodulize.classify)
         
-    Distribution.from_run!(ViennaRna::Fftbor.run(params["sequence"]), params["description"], params["data_from"], (params["options"] || {}).merge(mfe: 0))
+    Distribution.from_run!(
+      fftx.run(params["sequence"]), 
+      params["description"], 
+      params["data_from"], 
+      (params["options"] || {}).merge(mfe: 0)
+    )
   end
 end
 
@@ -164,7 +172,7 @@ module FftxDistributionFromSequenceAndStructureJob
   def self.perform(params)
     autobot_helper("data_loader_mysql_config")
         
-    fftx = Kernel.const_get("ViennaRna::%s" % params["algorithm"].demodulize)
+    fftx = ViennaRna.const_get(params["algorithm"].demodulize.classify)
         
     Distribution.from_run!(
       fftx.run({ seq: params["sequence"], str: params["structure"] }, params["fftx"] || {}), 
