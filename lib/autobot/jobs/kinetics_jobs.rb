@@ -41,3 +41,11 @@ module EnergyGridFromStructureFile
     File.open(params["out_file"], ?w) { |file| file.write(energy_grid.map { |row| row.join(?,) }.join(?\n)) }
   end
 end
+
+module KineticsUsingRScript
+  @queue = :kinetics
+  
+  def self.perform(params)
+    File.open(params["output"], ?w) { |file| file.write(%x|Rscript /Users/evansenter/Source/rna_kinetics/kinetics/matrix_inverse/fftbor2d.r '#{params["input"]}'|) }
+  end
+end
