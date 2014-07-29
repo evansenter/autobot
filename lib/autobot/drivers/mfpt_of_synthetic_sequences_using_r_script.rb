@@ -1,5 +1,5 @@
 $: << "/Users/evansenter/Source/autobot/lib" unless $:.include?("/Users/evansenter/Source/autobot/lib")
-require "vienna_rna"
+require "wrnap"
 require "awesome_print"
 require "resque"
 require "autobot/jobs/kinetics_jobs"

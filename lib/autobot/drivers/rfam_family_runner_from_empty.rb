@@ -1,5 +1,5 @@
 $: << "/Users/evansenter/Source/autobot/lib" unless $:.include?("/Users/evansenter/Source/autobot/lib")
-require "vienna_rna"
+require "wrnap"
 require "awesome_print"
 require "resque"
 require "autobot/jobs/fftx_jobs"
@@ -11,10 +11,10 @@ ViennaRna.debug = false
 
 family.entries.each do |rfam|
   Resque.enqueue(FftborDistributionFromEmptyJob, {
-    sequence:    rfam.sequence, 
-    description: rfam.description, 
-    data_from:   "rfam", 
-    options: { 
+    sequence:    rfam.sequence,
+    description: rfam.description,
+    data_from:   "rfam",
+    options: {
       family: "#{family.family_name} empty"
     }
   })

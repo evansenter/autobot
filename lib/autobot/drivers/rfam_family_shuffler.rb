@@ -1,5 +1,5 @@
 $: << "/Users/evansenter/Source/autobot/lib" unless $:.include?("/Users/evansenter/Source/autobot/lib")
-require "vienna_rna"
+require "wrnap"
 require "shuffle"
 require "awesome_print"
 require "resque"
@@ -13,10 +13,10 @@ ViennaRna.debug = false
 family.entries.each do |rfam|
   ARGV[1].to_i.times do
     Resque.enqueue(FftborDistributionJob, {
-      sequence:    Shuffle.new(rfam.sequence).dishuffle, 
-      description: rfam.description, 
-      data_from:   "rfam", 
-      options: { 
+      sequence:    Shuffle.new(rfam.sequence).dishuffle,
+      description: rfam.description,
+      data_from:   "rfam",
+      options: {
         family: "#{family.family_name} shuffled"
       }
     })
